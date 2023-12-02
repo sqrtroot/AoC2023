@@ -4,7 +4,7 @@ const days = @import("days/days.zig");
 const common = @import("common.zig");
 
 fn test_part(comptime part: u2, day_dir: std.fs.Dir, solution_fn: solution.SolutionFn) !void {
-    var input = day_dir.readFileAlloc(
+    const input = day_dir.readFileAlloc(
         common.allocator,
         std.fmt.comptimePrint("test_input_{}.txt", .{part}),
         std.math.maxInt(usize),
@@ -30,12 +30,12 @@ fn compare_answerfile(comptime part: u2, day_dir: std.fs.Dir, output: solution.O
         .{},
     );
     defer expected_file.close();
-    var expected = try expected_file.readToEndAlloc(common.allocator, std.math.maxInt(usize));
+    const expected = try expected_file.readToEndAlloc(common.allocator, std.math.maxInt(usize));
     defer common.allocator.free(expected);
 
     switch (output) {
         solution.OutputType.int => |answer| {
-            var int_answer = try std.fmt.parseInt(i64, expected, 10);
+            const int_answer = try std.fmt.parseInt(i64, expected, 10);
             try std.testing.expectEqual(int_answer, answer);
         },
         solution.OutputType.string => |answer| {
@@ -45,7 +45,7 @@ fn compare_answerfile(comptime part: u2, day_dir: std.fs.Dir, output: solution.O
 }
 
 fn test_day(comptime day: days.Day) !void {
-    var day_dir = try std.fs.cwd().openDir("src/days/" ++ day.day, .{});
+    const day_dir = try std.fs.cwd().openDir("src/days/" ++ day.day, .{});
     try test_part(1, day_dir, day.solution_fn);
     try test_part(2, day_dir, day.solution_fn);
 }
@@ -63,7 +63,7 @@ fn print_answer(output: solution.OutputType) void {
 
 fn run_day(comptime day: days.Day) !void {
     var day_dir = try std.fs.cwd().openDir("src/days/" ++ day.day, .{});
-    var input = try day_dir.readFileAlloc(common.allocator, "input.txt", std.math.maxInt(usize));
+    const input = try day_dir.readFileAlloc(common.allocator, "input.txt", std.math.maxInt(usize));
     defer common.allocator.free(input);
     const answers = try day.solution_fn(input);
     common.print("┃{s: ^5}┃", .{day.day});
