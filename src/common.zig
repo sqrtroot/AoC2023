@@ -4,8 +4,7 @@ pub const Timer = std.time.Timer;
 
 const ArrayList = std.ArrayList;
 
-var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-pub const gpa_allocator = &gpa.allocator;
+pub var gpa = std.heap.GeneralPurposeAllocator(.{ .stack_trace_frames = 40 }){};
 pub const heap_allocator = std.heap.page_allocator;
 var arena = std.heap.ArenaAllocator.init(heap_allocator);
 pub const arena_allocator = arena.allocator();
