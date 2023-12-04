@@ -6,4 +6,5 @@ pub const days = [_]Day{
     Day{ .solution_fn = .{ .zig = @import("2/solution.zig").solution }, .day = "2" },
     Day{ .solution_fn = .{ .python = "2/main.py" }, .day = "2" },
     Day{ .solution_fn = .{ .python = "3/main.py" }, .day = "3" },
+    Day{ .solution_fn = .{ .python = "4/main.py" }, .day = "4" },
 };
