@@ -25,14 +25,15 @@ fn run_day(comptime day: solution.Day) !void {
     } else {
         common.print("Not implemented ", .{});
     }
-    common.print("┃\n", .{});
+    const bench_time = try day.benchmark(1000);
+    common.print("┃  {: >10.3} us  ┃\n", .{bench_time});
 }
 
 pub fn main() !void {
     common.print(
         \\
-        \\┃ Day ┃ Language ┃      Part 1      ┃      Part 2      ┃
-        \\┣━━━━━╋━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━┫
+        \\┃ Day ┃ Language ┃      Part 1      ┃      Part 2      ┃      Speed      ┃
+        \\┣━━━━━╋━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━━━┫
         \\
     , .{});
     inline for (days.days) |day| {

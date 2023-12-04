@@ -87,6 +87,18 @@ pub const Day = struct {
         return self.solution_fn.run(input);
     }
 
+    pub fn benchmark(comptime self: Day, bench_count: u64) !f128 {
+        var day_dir = try std.fs.cwd().openDir("src/days/" ++ self.day, .{});
+        const input = try day_dir.readFileAlloc(common.allocator, "input.txt", std.math.maxInt(usize));
+        defer common.allocator.free(input);
+        var timer = try std.time.Timer.start();
+        for (0..bench_count) |_| {
+            _ = self.solution_fn.run(input) catch unreachable;
+        }
+        const time = timer.read();
+        return @as(f128, @floatFromInt(time)) / @as(f128, @floatFromInt(bench_count)) / 1000.0;
+    }
+
     fn compare_answerfile(comptime part: u2, day_dir: std.fs.Dir, output: OutputType) !void {
         const expected = try day_dir.readFileAlloc(
             common.allocator,
