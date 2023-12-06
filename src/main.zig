@@ -14,7 +14,7 @@ fn print_answer(output: solution.OutputType) void {
     }
 }
 
-fn run_day(comptime day: solution.Day) !void {
+fn run_day(comptime day: solution.Day, do_benchy: bool) !void {
     const answers = try day.run();
     defer answers.deinit();
     common.print("┃{s: ^5}┃{s: ^10}┃", .{ day.day, @tagName(day.solution_fn) });
@@ -25,8 +25,12 @@ fn run_day(comptime day: solution.Day) !void {
     } else {
         common.print("Not implemented ", .{});
     }
-    const bench_time = try day.benchmark(1000);
-    common.print("┃  {: >10.3} us  ┃\n", .{bench_time});
+    if (do_benchy) {
+        const bench_time = try day.benchmark(100);
+        common.print("┃  {: >10.3} us  ┃\n", .{bench_time});
+    } else {
+        common.print("┃    no benchy    ┃\n", .{});
+    }
 }
 
 pub fn main() !void {
@@ -37,7 +41,7 @@ pub fn main() !void {
         \\
     , .{});
     inline for (days.days) |day| {
-        try run_day(day);
+        try run_day(day, day.skip_benchy == false);
     }
 }
 

@@ -1,0 +1,3 @@
+[submodule "external/mecha"]
+	path = external/mecha
+	url = git@github.com:Hejsil/mecha.git

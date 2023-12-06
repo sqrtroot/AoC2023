@@ -6,11 +6,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - uses: goto-bus-stop/setup-zig@v2
       - run: zig build test
   run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+        with:
+          submodules: 'true'
       - uses: goto-bus-stop/setup-zig@v2
       - run: zig build run

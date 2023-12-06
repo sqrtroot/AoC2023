@@ -4,6 +4,10 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    const mecha = b.addModule("mecha", .{
+        .source_file = .{ .path = "external/mecha/mecha.zig" },
+    });
+
     const exe = b.addExecutable(.{
         .name = "AdventOfCode",
         .root_source_file = .{ .path = "src/main.zig" },
@@ -12,6 +16,7 @@ pub fn build(b: *std.Build) void {
     });
 
     b.installArtifact(exe);
+    exe.addModule("mecha", mecha);
 
     //runstep
     const run_cmd = b.addRunArtifact(exe);
@@ -29,6 +34,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     b.installArtifact(unit_tests);
+    unit_tests.addModule("mecha", mecha);
 
     const run_unit_tests = b.addRunArtifact(unit_tests);
     const test_step = b.step("test", "Run unit tests");

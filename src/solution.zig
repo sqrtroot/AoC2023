@@ -79,6 +79,7 @@ pub const DaySolutionType = union(enum) {
 pub const Day = struct {
     solution_fn: DaySolutionType,
     day: []const u8,
+    skip_benchy: bool = false,
 
     pub fn run(comptime self: Day) !Output {
         var day_dir = try std.fs.cwd().openDir("src/days/" ++ self.day, .{});
