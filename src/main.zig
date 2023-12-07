@@ -50,4 +50,5 @@ test "Test days" {
         try day.test_part(1);
         try day.test_part(2);
     }
+    std.testing.refAllDeclsRecursive(@This());
 }
