@@ -4,48 +4,81 @@ const Output = @import("../../solution.zig").Output;
 const mecha = @import("mecha");
 const common = @import("../../common.zig");
 
-const MapRange = struct {
+const Range = struct {
     dest: usize,
     source: usize,
     len: usize,
-    fn in_input_range(self: MapRange, in: usize) bool {
+    fn in_input_range(self: Range, in: usize) bool {
         return in >= self.source and in < self.source + self.len;
     }
-    fn in_output_range(self: MapRange, in: usize) bool {
+    fn in_output_range(self: Range, in: usize) bool {
         return in >= self.dest and in < self.dest + self.len;
     }
-    fn map_onto(self: MapRange, in: usize) usize {
+    fn map_onto(self: Range, in: usize) usize {
         std.debug.assert(self.in_input_range(in));
         return in - self.source + self.dest;
     }
 
-    fn map_from(self: MapRange, in: usize) usize {
+    fn map_from(self: Range, in: usize) usize {
         std.debug.assert(self.in_output_range(in));
         return in - self.dest + self.source;
     }
-};
 
-const Range = struct {
-    begin: usize,
-    len: usize,
-    fn in_range(self: Range, t: usize) bool {
-        return t >= self.begin and t < self.begin + self.len;
+    //return true if self.source is less than other.source
+    fn compare(self: Range, other: Range) bool {
+        return self.source < other.source;
     }
-    const null_range = Range{ .begin = 0, .len = 0 };
+
+    fn combine(self: Range, with: Range) [3]?Range {
+        const min = if (self.compare(with)) self else with;
+        const max = if (!self.compare(with)) self else with;
+        std.debug.print("Combining: {} with {}\n", .{ min, max });
+        if (min.dest + min.len < max.source) {
+            return .{ min, max, null };
+        }
+        return .{
+            Range{ .source = min.dest, .dest = min.dest, .len = max.source - min.dest },
+            max,
+            null,
+        };
+    }
 };
 
-// test "RangeCombine" {
-//     const a: Range = .{ .begin = 0, .len = 1 };
-//     const b: Range = .{ .begin = 5, .len = 1 };
-//     for (a.combine_range(b)) |new_range| {
-//         std.debug.print("\n{any}", .{new_range});
-//     }
-// }
+test "RangeCombine No Overlap" {
+    const a: Range = .{ .source = 0, .dest = 4, .len = 3 };
+    const b: Range = .{ .source = 10, .dest = 10, .len = 3 };
+    std.debug.print("{any}\n", .{a.combine(b)});
+    try std.testing.expectEqualSlices(?Range, &[3]?Range{ a, b, null }, &a.combine(b));
+    try std.testing.expectEqualSlices(?Range, &[3]?Range{ a, b, null }, &b.combine(a));
+}
+test "RangeCombine partial overlap" {
+    const a: Range = .{ .source = 0, .dest = 4, .len = 20 };
+    const b: Range = .{ .source = 10, .dest = 20, .len = 30 };
+    std.debug.print("{any}\n", .{a.combine(b)});
+    try std.testing.expectEqualSlices(?Range, &[3]?Range{
+        Range{ .source = 4, .dest = 4, .len = 6 },
+        Range{ .source = 10, .dest = 20, .len = 30 },
+        null,
+    }, &a.combine(b));
+    try std.testing.expectEqualSlices(?Range, &[3]?Range{
+        Range{ .source = 4, .dest = 4, .len = 6 },
+        Range{ .source = 10, .dest = 20, .len = 30 },
+        null,
+    }, &b.combine(a));
+}
 
 const Category = struct {
     name: []const u8,
-    ranges: []MapRange,
+    ranges: []Range,
 };
+
+fn toSeedRange(tuple: anytype) Range {
+    return Range{
+        .dest = tuple[0],
+        .source = tuple[0],
+        .len = tuple[1],
+    };
+}
 
 const SeedsParser = mecha.combine(.{
     mecha.string("seeds: ").discard(),
@@ -54,7 +87,7 @@ const SeedsParser = mecha.combine(.{
             mecha.int(usize, .{ .parse_sign = false }),
             2,
             .{ .separator = mecha.ascii.char(' ').discard() },
-        ).map(mecha.toStruct(Range)),
+        ).map(toSeedRange),
         .{ .separator = mecha.ascii.char(' ').discard() },
     ),
     mecha.ascii.char('\n').discard(),
@@ -66,7 +99,7 @@ const RangeParser = mecha.manyN(
     .{
         .separator = mecha.ascii.char(' ').discard(),
     },
-).map(mecha.toStruct(MapRange));
+).map(mecha.toStruct(Range));
 
 const CategoryParser = mecha.combine(.{
     mecha.many(mecha.ascii.not(mecha.ascii.char('\n')), .{}),
@@ -117,7 +150,7 @@ fn backward_feed(categories: []Category, in: usize) usize {
 
 fn in_ranges(ranges: []Range, in: usize) bool {
     for (ranges) |range| {
-        if (range.in_range(in)) {
+        if (range.in_input_range(in)) {
             return true;
         }
     }
@@ -135,6 +168,32 @@ fn bruteforce_part2(seeds: []Range, categories: []Category) usize {
     }
 }
 
+fn smort_part2(seeds: []Range, categories: []Category) !usize {
+    if (categories.len == 0) {
+        std.sort.pdq(Range, seeds, {}, struct {
+            fn cmpr(_: void, range1: Range, range2: Range) bool {
+                return range1.compare(range2);
+            }
+        }.cmpr);
+        return seeds[0].dest;
+    }
+    const category = categories[0];
+    std.debug.print("Applying category {s}:{any} to {any}\n", .{ category.name, category.ranges, seeds });
+    var new_seeds = std.ArrayList(Range).init(common.allocator);
+    defer new_seeds.deinit();
+    for (seeds) |seed| {
+        for (category.ranges) |range| {
+            for (seed.combine(range)) |new_seed| {
+                if (new_seed == null) {
+                    break;
+                }
+                try new_seeds.append(new_seed.?);
+            }
+        }
+    }
+    return try smort_part2(new_seeds.items, categories[1..]);
+}
+
 pub fn solution(input: Input) !Output {
     const opgave = try FileParser.parse(common.allocator, input);
     defer common.allocator.free(opgave.value[0]);
@@ -147,7 +206,7 @@ pub fn solution(input: Input) !Output {
     for (seeds) |seed| {
         //here we just use the begin and length as two seperate seeds
         const ff = @min(
-            forward_feed(categories, seed.begin),
+            forward_feed(categories, seed.source),
             forward_feed(categories, seed.len),
         );
         if (ff < min) {
@@ -156,6 +215,6 @@ pub fn solution(input: Input) !Output {
     }
     return .{
         .part1 = .{ .int = @intCast(min) },
-        .part2 = .{ .int = @intCast(bruteforce_part2(seeds, categories)) },
+        .part2 = .{ .int = @intCast(try smort_part2(seeds, categories)) },
     };
 }

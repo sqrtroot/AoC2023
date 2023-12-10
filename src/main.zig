@@ -23,7 +23,7 @@ fn run_day(comptime day: solution.Day, do_benchy: bool) !void {
     if (answers.part2 != null) {
         print_answer(answers.part2.?);
     } else {
-        common.print("Not implemented ", .{});
+        common.print(" Not implemented  ", .{});
     }
     if (do_benchy) {
         const bench_time = try day.benchmark(100);
@@ -41,7 +41,7 @@ pub fn main() !void {
         \\
     , .{});
     inline for (days.days) |day| {
-        try run_day(day, day.skip_benchy == false);
+        run_day(day, day.skip_benchy == false) catch unreachable;
     }
 }
 
